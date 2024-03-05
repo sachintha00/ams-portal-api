@@ -1,0 +1,81 @@
+name: tpd
+
+on:
+  push:
+    tags:
+      - "*.*.*"
+
+jobs:
+  set_version:
+    runs-on: ubuntu-latest
+    steps:
+      - name: "Example output creation"
+        id: "get_release_version"
+        run: |
+          RELEASE_VERSION=${GITHUB_REF#refs/*/}
+          echo "RELEASE_VERSION=$RELEASE_VERSION" >> $GITHUB_OUTPUT
+    outputs:
+      RELEASE_VERSION: ${{steps.get_release_version.outputs.RELEASE_VERSION}}
+
+  build:
+    runs-on: ubuntu-latest
+    needs: [set_version]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v1
+
+      - name: Login to GitHub Packages
+        run: |
+          RELEASE_VERSION=${{needs.set_version.outputs.RELEASE_VERSION}}
+          echo ${{ secrets.GITHUB_TOKEN }} | docker login ghcr.io --username dinusha-technovity --password-stdin
+
+          if ! docker pull ghcr.io/dinusha-technovity/composer_runner:$RELEASE_VERSION 2>/dev/null; then
+            docker build -f ./prod/dockerfiles/composer_runner.Dockerfile -t ghcr.io/dinusha-technovity/composer_runner:$RELEASE_VERSION .
+          fi
+
+          if ! docker pull ghcr.io/dinusha-technovity/npm_runner:$RELEASE_VERSION 2>/dev/null; then
+            docker build -f ./prod/dockerfiles/npm_runner.Dockerfile -t ghcr.io/dinusha-technovity/npm_runner:$RELEASE_VERSION .
+          fi
+
+          if ! docker pull ghcr.io/dinusha-technovity/optiomax_web_api:$RELEASE_VERSION 2>/dev/null; then
+            docker build --build-arg USERNAME=dinusha-technovity --build-arg RELEASE_VERSION=$RELEASE_VERSION -f ./prod/dockerfiles/app.Dockerfile -t ghcr.io/dinusha-technovity/optiomax_web_api:$RELEASE_VERSION .
+          fi
+          if ! docker pull ghcr.io/dinusha-technovity/optiomax_web_api_proxy:$RELEASE_VERSION 2>/dev/null; then
+            docker build -f ./prod/dockerfiles/static.Dockerfile -t ghcr.io/dinusha-technovity/optiomax_web_api_proxy:$RELEASE_VERSION .
+          fi
+
+          docker push ghcr.io/dinusha-technovity/optiomax_web_api:$RELEASE_VERSION
+          docker push ghcr.io/dinusha-technovity/optiomax_web_api_proxy:$RELEASE_VERSION
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: [build, set_version]
+    steps:
+      - name: Login to Droplet
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          password: ${{ secrets.VPS_PASSWORD }}
+          script: |
+            echo ${{ secrets.GITHUB_TOKEN }} | docker login ghcr.io --username dinusha-technovity --password-stdin \
+            && cd optiomax/optiomax-web-api \
+            && docker pull ghcr.io/dinusha-technovity/optiomax_web_api:${{ needs.set_version.outputs.RELEASE_VERSION }} \
+            && docker pull ghcr.io/dinusha-technovity/optiomax_web_api_proxy:${{ needs.set_version.outputs.RELEASE_VERSION }} \
+            && VERSION=${{ needs.set_version.outputs.RELEASE_VERSION }} docker compose -f docker-compose-prod.yml up -d --build --remove-orphans \
+            && docker logout \
+            && docker system prune -af
+          
+
+  run-migrations:
+    runs-on: ubuntu-latest
+    needs: [deploy]
+    steps:
+      - name: Run Database Migrations
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          password: ${{ secrets.VPS_PASSWORD }}
+          script: |
+            docker exec -t optiomax-web-api sh -c "php artisan migrate"

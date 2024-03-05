@@ -1,0 +1,26 @@
+version: '3.8'
+
+services:
+  app:
+    build:
+      dockerfile: ./dockerfiles/app.Dockerfile
+      context: .
+    image: $APP_IMAGE
+    restart: unless-stopped
+    container_name: app
+    volumes:
+      - $APP_VOLUMES_SRC:/var/www/html
+    env_file:
+      - ./envs/app.env
+  
+  nginx:
+    depends_on:
+      - app
+    image: nginx:stable-alpine3.17
+    restart: unless-stopped
+    container_name: nginx
+    ports:
+      - $NGINX_PORT:80
+    volumes:
+      - $APP_VOLUMES_SRC:/var/www/html
+      - $SERVER_SRC:/etc/nginx/conf.d/default.conf
