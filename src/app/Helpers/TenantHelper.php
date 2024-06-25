@@ -3,8 +3,9 @@
 namespace App\Helpers;
 
 use Illuminate\Support\Facades\Artisan;
-use Illuminate\Support\Facades\Config;
 use App\Models\User;
+use App\Helpers\DBSwitchHelper;
+use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
 
 
@@ -18,38 +19,58 @@ class TenantHelper
 
     public static function setupTenantDatabase($tenantDbName, $tenantUser): void
     {
-
-        try{
+        try {
             Artisan::call('tenant:database:create', ['name' => $tenantDbName]);
             Artisan::call('tenant:migrate', [
                 'database' => $tenantDbName,
                 '--path' => "database/migrations/tenant",
             ]);
 
-            $originalDefaultConnection = Config::get('database.default');
-            Config::set('database.default', $tenantDbName);
 
-            Artisan::call('passport:install');
-            Artisan::call('tenant:migrate', [
-                'database' => $tenantDbName,
-                '--path' => "database/migrations/tenant",
+            DBSwitchHelper::switch($tenantDbName);
+
+            DB::purge($tenantDbName);
+            DB::reconnect($tenantDbName);
+
+            $defaultConnection = DB::getDefaultConnection();
+            DB::setDefaultConnection($tenantDbName);
+
+            Artisan::call('db:seed', [
+                '--class' => 'TenantDBSeeder',
+                '--database' => $tenantDbName
             ]);
 
-            User::create($tenantUser);
+            User::on($tenantDbName)->create($tenantUser);
 
-            Config::set('database.default', $originalDefaultConnection);
-        }catch (\Throwable $th) {
+            DB::setDefaultConnection($defaultConnection);
+
+            DB::disconnect($tenantDbName);
+
+        } catch (\Throwable $th) {
+            DB::setDefaultConnection($defaultConnection);
+            DB::disconnect($tenantDbName); 
+
             self::rollbackChanges($tenantDbName);
             throw $th;
         }
     }
 
-    private static function rollbackChanges($tenantDbName): void
+    public static function rollbackChanges($tenantDbName): void
     {
         try {
-            DB::statement("DROP DATABASE IF EXISTS $tenantDbName");
-        } catch (\Exception $e) {
-            throw $e;
+            DB::statement("SELECT pg_terminate_backend(pg_stat_activity.pid)
+                            FROM pg_stat_activity
+                            WHERE pg_stat_activity.datname = ?
+                            AND pid <> pg_backend_pid()", [$tenantDbName]);
+
+            self::dropTenantDatabase($tenantDbName);
+        } catch (\Throwable $th) {
+            throw $th;
         }
+    }
+
+    public static function dropTenantDatabase($tenantDbName): void
+    {
+        DB::statement("DROP DATABASE IF EXISTS \"$tenantDbName\"");
     }
 }

@@ -8,12 +8,15 @@ return new class extends Migration
 {
     public function up(): void
     {
-        //
+        Schema::create('designations', function (Blueprint $table) {
+            $table->id();
+            $table->string('designation');
+            $table->timestamps();
+        });
     }
-
-   
+    
     public function down(): void
     {
-        //
+        Schema::dropIfExists('designations');
     }
 };
