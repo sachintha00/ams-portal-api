@@ -6,17 +6,17 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-
     public function up(): void
     {
-        Schema::create('users_verify', function (Blueprint $table) {
+        Schema::create('workflow_request_types', function (Blueprint $table) {
             $table->id();
+            $table->string('request_type');
             $table->timestamps();
         });
     }
 
     public function down(): void
     {
-        Schema::dropIfExists('users_verify');
+        Schema::dropIfExists('workflow_request_types');
     }
 };

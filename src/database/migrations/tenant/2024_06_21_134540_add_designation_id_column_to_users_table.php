@@ -6,17 +6,17 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-   
     public function up(): void
     {
-        Schema::create('permission_tables', function (Blueprint $table) {
-            $table->id();
-            $table->timestamps();
+        Schema::table('users', function (Blueprint $table) {
+            $table->unsignedBigInteger('designation_id')->nullable();
         });
     }
 
     public function down(): void
     {
-        Schema::dropIfExists('permission_tables');
+        Schema::table('users', function (Blueprint $table) {
+            $table->dropColumn('designation_id');
+        });
     }
 };

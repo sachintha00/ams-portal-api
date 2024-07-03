@@ -8,15 +8,15 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('oauth_personal_access_clients', function (Blueprint $table) {
-            $table->bigIncrements('id');
-            $table->unsignedBigInteger('client_id');
+        Schema::create('sidebar_menu_items', function (Blueprint $table) {
+            $table->id();
+            $table->json('menu_structure');
             $table->timestamps();
         });
     }
 
     public function down(): void
     {
-        Schema::dropIfExists('oauth_personal_access_clients');
+        Schema::dropIfExists('sidebar_menu_items');
     }
 };

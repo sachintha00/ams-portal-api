@@ -6,18 +6,17 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    
     public function up(): void
     {
-        Schema::create('tbl_menu', function (Blueprint $table) {
+        Schema::create('workflow_types', function (Blueprint $table) {
             $table->id();
+            $table->string('workflow_type');
             $table->timestamps();
         });
     }
-
     
     public function down(): void
     {
-        Schema::dropIfExists('tbl_menu');
+        Schema::dropIfExists('workflow_types');
     }
 };
