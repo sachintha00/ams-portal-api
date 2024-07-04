@@ -12,7 +12,7 @@ class TenantRequestTypesSeeder extends Seeder
     {
         $requestTypes = [
             ['request_type' => 'Asset Requisition'],
-            ['request_type' => 'Asset Purchase'],
+            ['request_type' => 'Supplier Registration'],
         ];
 
         DB::table('workflow_request_types')->insert($requestTypes);

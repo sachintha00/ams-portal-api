@@ -17,7 +17,7 @@ class UserAuthenticationController extends Controller
 {
     public function registerNewUser(UserAuthRequest $request)
     {
-        // DB::beginTransaction();
+        // DB::beginTransaction(); 
         try {
             $validatedUser = $request->validated();
 
@@ -25,7 +25,8 @@ class UserAuthenticationController extends Controller
             $validatedUser['password'] = bcrypt($validatedUser['password']);
 
             $tenantDbName = TenantHelper::generateTenantDbName($registeredUserEmail);
-            $validatedUser['tenant_db_name'] = $tenantDbName;
+            $validatedUser['tenant_db_name'] = $tenantDbName; 
+            $validatedUser['is_owner'] = true;
 
             $createdUser = User::create($validatedUser);
 
@@ -52,9 +53,8 @@ class UserAuthenticationController extends Controller
 
     public function loginUser(AuthLoginRequest $request)
     {
-        if (Auth::attempt(['email' => $request->email, 'password' => $request->password])) {
+        if (Auth::attempt(['email' => $request->email, 'password' => $request->password, 'is_owner' => true])) {
             $user = Auth::user();
-
             $tokensResult = UserAuthHelper::getAuthAccessRefreshToken($request->email, $request->password);
             $accessToken = $tokensResult['access_token'];
             $refreshToken = $tokensResult['refresh_token'];
@@ -68,7 +68,6 @@ class UserAuthenticationController extends Controller
 
             $response = response()->json([
                 'status' => true,
-                'user' => $user,
                 'access_token' => $accessToken,
                 'refresh_token' => $refreshToken,
             ], Response::HTTP_OK);

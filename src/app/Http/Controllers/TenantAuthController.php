@@ -45,7 +45,7 @@ class TenantAuthController extends Controller
         try {
             $validatedUser = $request->validated();
             $validatedUser['password'] = bcrypt($validatedUser['password']);
-
+ 
             User::create($validatedUser);
 
             DB::commit();

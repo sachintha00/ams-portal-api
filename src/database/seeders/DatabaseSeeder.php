@@ -9,7 +9,7 @@ class DatabaseSeeder extends Seeder
 {
     public function run(): void
     {
-        $this->call(SidebarMenuDataSeeder::class);
-        $this->call(DrawerDataSeeder::class);
+        $this->call(SidebarMenusDataSeeder::class);
+        $this->call(WidgetsDataSeeder::class);
     }
 }

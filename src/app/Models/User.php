@@ -7,10 +7,11 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Passport\HasApiTokens;
+use Spatie\Permission\Traits\HasRoles;
 
 class User extends Authenticatable implements MustVerifyEmail
 {
-    use HasApiTokens, HasFactory, Notifiable;
+    use HasApiTokens, HasFactory, Notifiable, HasRoles;
 
     protected $fillable = [
         'user_name',
@@ -31,6 +32,7 @@ class User extends Authenticatable implements MustVerifyEmail
         'first_login',
         'user_description',
         'is_deleted',
+        'is_owner',
         'created_user',
         'tenant_db_name'
     ];
@@ -47,5 +49,6 @@ class User extends Authenticatable implements MustVerifyEmail
         'is_trial_account' => 'boolean',
         'first_login' => 'datetime',
         'is_deleted' => 'boolean',
+        'is_owner' => 'boolean',
     ];
 }

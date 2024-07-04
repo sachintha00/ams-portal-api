@@ -1,24 +1,24 @@
 version: '3.8'
 
 services:
-  app:
+  webapi:
     build:
       dockerfile: ./dockerfiles/app.Dockerfile
       context: .
     image: $APP_IMAGE
     restart: unless-stopped
-    container_name: app
+    container_name: web
     volumes:
       - $APP_VOLUMES_SRC:/var/www/html
     env_file:
       - ./envs/app.env
   
-  nginx:
+  web-nginx:
     depends_on:
-      - app
+      - webapi
     image: nginx:stable-alpine3.17
     restart: unless-stopped
-    container_name: nginx
+    container_name: web-nginx
     ports:
       - $NGINX_PORT:80
     volumes:

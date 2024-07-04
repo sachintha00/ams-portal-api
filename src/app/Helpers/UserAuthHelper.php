@@ -18,7 +18,7 @@ class UserAuthHelper
             $oClient = OClient::where('password_client', 1)->first();
             $hostIpAddress = config('passport.app_host.ip');
             $hostPort = config('passport.app_host.port');
-
+            
             $response = $httpClient->post("http://{$hostIpAddress}:{$hostPort}/oauth/token", [
                 'headers' => [
                     'X-API-Key' => '{{token}}',
@@ -32,6 +32,7 @@ class UserAuthHelper
                     'scope' => '',
                 ],
             ]);
+
 
             $result = json_decode($response->getBody(), true);
 

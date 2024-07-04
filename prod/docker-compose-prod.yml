@@ -1,7 +1,7 @@
 services:
   app:
     image: $APP_IMAGE_NAME:$VERSION
-    restart: unless-stopped
+
     container_name: $APP_CONTAINER_NAME
     env_file:
       - ./envs/app.env
@@ -10,7 +10,6 @@ services:
     depends_on:
       - app
     image: $PROXY_IMAGE_NAME:$VERSION
-    restart: unless-stopped
     container_name: $PROXY_CONTAINER_NAME
     ports:
       - $APP_PROXY_PORT:80

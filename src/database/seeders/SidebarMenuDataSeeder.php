@@ -17,7 +17,7 @@ class SidebarMenuDataSeeder extends Seeder
                 },
                 {
                     "menu": "Apps",
-                    "icon": "/assets/icons/dashboard_sidebar/dashboard.png",
+                    "icon": "/assets/icons/dashboard_sidebar/predictive-chart.png",
                     "link": "/dashboard",
                     "subMenu": [
                         {
@@ -53,35 +53,10 @@ class SidebarMenuDataSeeder extends Seeder
                         }
                     ]
                 },
-                {
-                    "menu": "Authentications",
-                    "icon": "/assets/icons/dashboard_sidebar/dashboard.png",
-                    "subMenu": [
-                        {
-                            "subMenuName": "Test 1",
-                            "submenuItems": {
-                                "nestedSubMenu": [
-                                    { "link": "/dashboard", "name": "Nested Test 1" },
-                                    { "link": "/test", "name": "Nested Test 1" }
-                                ]
-                            }
-                        },
-                        {
-                            "subMenuName": "Test 2",
-                            "submenuItems": {
-                                "nestedSubMenu": [
-                                    { "link": "/dashboard", "name": "Nested Test 1" },
-                                    { "link": "/test", "name": "Nested Test 1" },
-                                    { "link": "/test", "name": "Nested Test 1" },
-                                    { "link": "/test", "name": "Nested Test 1" }
-                                ]
-                            }
-                        }
-                    ]
-                },
+                
                 {
                     "menu": "Pages",
-                    "icon": "/assets/icons/dashboard_sidebar/dashboard.png",
+                    "icon": "/assets/icons/dashboard_sidebar/group.png",
                     "subMenu": [
                         {
                             "subMenuName": "Test 1",

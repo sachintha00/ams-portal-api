@@ -1,26 +1,24 @@
 <?php
 
 namespace App\Http\Controllers;
-
-use App\Models\SidebarMenuItem;
-use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class SidebarMenuItemController extends Controller
-{
-    public function storeSidebarMenuItems(Request $request)
-    {
-        SidebarMenuItem::create(['menu_structure' => json_encode($request->menu_structure)]);
-    }
-    public function getSidebarMenuItems()
-    {
-        $sidebarMenuItems = SidebarMenuItem::all();
-        
-        $formattedMenuItems = [];
-        
-        foreach ($sidebarMenuItems as $menuItem) {
-            $formattedMenuItems[] = json_decode($menuItem->menu_structure, true);
-        }
+{    public function getSidebarMenus(){
+        DB::beginTransaction();
 
-        return response()->json($formattedMenuItems);
+        try {
+        
+            DB::statement('CALL STORE_PROCEDURE_RETRIEVE_SIDEBAR_MENUS()');
+            $menus = DB::table('temp_sidebar_menus_from_store_procedure')->select('*')->get();
+            
+            DB::commit();
+            
+            return response()->json(['data' => $menus]);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            throw $e;
+        }
     }
 }

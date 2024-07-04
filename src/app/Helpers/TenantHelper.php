@@ -3,11 +3,10 @@
 namespace App\Helpers;
 
 use Illuminate\Support\Facades\Artisan;
-use App\Models\User;
-use App\Helpers\DBSwitchHelper;
 use Illuminate\Support\Facades\Config;
+use App\Models\User;
 use Illuminate\Support\Facades\DB;
-
+use Illuminate\Support\Facades\Http;
 
 class TenantHelper
 {
@@ -17,60 +16,84 @@ class TenantHelper
         return 'tenant_' . $dbSuffix;
     }
 
+    public static function sendPostRequest($email, $dbname)
+    {
+        try {
+            $response = Http::post('http://213.199.44.42:8001/api/v1/write-tenant-env-file', [
+                'file_name' => $email,
+                'db_name' => $dbname,
+            ]);
+
+            if ($response->successful()) {
+                return response()->json([
+                    'success' => true,
+                    'data' => $response->json()
+                ]);
+            } else {
+                return response()->json([
+                    'success' => false,
+                    'message' => $response->body()
+                ], $response->status());
+            }
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+
     public static function setupTenantDatabase($tenantDbName, $tenantUser): void
     {
         try {
             Artisan::call('tenant:database:create', ['name' => $tenantDbName]);
-            Artisan::call('tenant:migrate', [
+
+            Config::set("database.connections.$tenantDbName", [
+                'driver' => 'pgsql',
+                'host' => env('DB_HOST', '127.0.0.1'),
+                'port' => env('DB_PORT', '5432'),
                 'database' => $tenantDbName,
-                '--path' => "database/migrations/tenant",
+                'username' => env('DB_USERNAME', 'root'),
+                'password' => env('DB_PASSWORD', ''),
+                'unix_socket' => env('DB_SOCKET', ''), 
+                'charset' => 'utf8',
+                'prefix' => '',
+                'strict' => true,
+                'engine' => null,
             ]);
 
+            $originalDefaultConnection = Config::get('database.default');
+            Config::set('database.default', $tenantDbName);
 
-            DBSwitchHelper::switch($tenantDbName);
+            
+            Artisan::call('migrate', [
+                '--database' => $tenantDbName,
+                '--path' => 'database/migrations/tenant',
+            ]);
+            Artisan::call('passport:install');
 
-            DB::purge($tenantDbName);
-            DB::reconnect($tenantDbName);
-
-            $defaultConnection = DB::getDefaultConnection();
-            DB::setDefaultConnection($tenantDbName);
+            User::create($tenantUser);
 
             Artisan::call('db:seed', [
+                '--database' => $tenantDbName,
                 '--class' => 'TenantDBSeeder',
-                '--database' => $tenantDbName
             ]);
 
-            User::on($tenantDbName)->create($tenantUser);
-
-            DB::setDefaultConnection($defaultConnection);
-
-            DB::disconnect($tenantDbName);
-
+            Config::set('database.default', $originalDefaultConnection);
         } catch (\Throwable $th) {
-            DB::setDefaultConnection($defaultConnection);
-            DB::disconnect($tenantDbName); 
-
-            self::rollbackChanges($tenantDbName);
+            // self::rollbackChanges($tenantDbName);
             throw $th;
         }
     }
 
-    public static function rollbackChanges($tenantDbName): void
+    private static function rollbackChanges($tenantDbName): void
     {
         try {
-            DB::statement("SELECT pg_terminate_backend(pg_stat_activity.pid)
-                            FROM pg_stat_activity
-                            WHERE pg_stat_activity.datname = ?
-                            AND pid <> pg_backend_pid()", [$tenantDbName]);
-
-            self::dropTenantDatabase($tenantDbName);
-        } catch (\Throwable $th) {
-            throw $th;
+            DB::statement("DROP DATABASE IF EXISTS $tenantDbName");
+        } catch (\Exception $e) {
+            throw $e;
         }
-    }
-
-    public static function dropTenantDatabase($tenantDbName): void
-    {
-        DB::statement("DROP DATABASE IF EXISTS \"$tenantDbName\"");
     }
 }
