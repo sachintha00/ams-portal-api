@@ -34,7 +34,6 @@ class TenantRegisterdDataSaveRequest extends FormRequest
             'user_description' => ['nullable', 'string'],
             'is_deleted' => ['nullable', 'boolean'],
             'created_user' => ['nullable', 'string', 'max:255'],
-            'tenant_db_name' => 'required|string|max:255|exists:users,tenant_db_name',
             'email' => 'required|email:rfc,dns|max:255|unique:users,email',
             'password' => [
                 'required', 'string', 'min:8',
