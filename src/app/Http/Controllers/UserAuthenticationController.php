@@ -6,12 +6,14 @@ use App\Helpers\TenantHelper;
 use App\Helpers\UserAuthHelper;
 use App\Http\Requests\AuthLoginRequest;
 use App\Models\User;
+use App\Models\tenants;
 use App\Http\Requests\UserAuthRequest;
 use Illuminate\Http\Response;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Laravel\Passport\Token;
+use Illuminate\Support\Str;
 
 class UserAuthenticationController extends Controller
 {
@@ -21,18 +23,24 @@ class UserAuthenticationController extends Controller
         try {
             $validatedUser = $request->validated();
 
-            $registeredUserEmail = $validatedUser['email'];
+            $packageType = $validatedUser['package'];
+            $email = $validatedUser['email'];
+            $appUserEmail = $validatedUser['app_user_email'];
             $validatedUser['password'] = bcrypt($validatedUser['password']);
-
-            $tenantDbName = TenantHelper::generateTenantDbName($registeredUserEmail);
-            $validatedUser['tenant_db_name'] = $tenantDbName; 
-            $validatedUser['is_owner'] = true;
+            $validatedUser['is_owner'] = true; 
 
             $createdUser = User::create($validatedUser);
 
-            $emailVerifyToken = UserAuthHelper::sendVerificationEmail($createdUser);
+            // If the user's email is different from the app user email, create a secondary user
+            if ($email != $appUserEmail) {
+                $tenantUser = User::findOrFail($createdUser->id);
+                $tenantUser->is_app_user = false;
+                $tenantUser->save();
+            }
 
-            TenantHelper::setupTenantDatabase($tenantDbName, $validatedUser);
+            TenantHelper::setupTenantDatabase($createdUser, $packageType, $appUserEmail);
+
+            $emailVerifyToken = UserAuthHelper::sendVerificationEmail($createdUser);
 
             // DB::commit();
 

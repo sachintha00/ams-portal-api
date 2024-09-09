@@ -8,33 +8,36 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Passport\HasApiTokens;
 use Spatie\Permission\Traits\HasRoles;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class User extends Authenticatable implements MustVerifyEmail
 {
-    use HasApiTokens, HasFactory, Notifiable, HasRoles;
+    use HasApiTokens, HasFactory, Notifiable, HasRoles, SoftDeletes;
 
     protected $fillable = [
         'user_name',
         'email',
         'name',
         'contact_no',
+        'profile_image',
         'contact_person',
         'website',
         'address',
-        'password',
         'email_verified_at',
+        'is_email_verified',
+        'password',
         'employee_code',
         'security_question',
         'security_answer',
         'activation_code',
         'is_user_blocked',
-        'is_trial_account',
         'first_login',
         'user_description',
-        'is_deleted',
+        'status',
         'is_owner',
-        'created_user',
-        'tenant_db_name'
+        'is_app_user',
+        'created_by',
+        'tenant_id'
     ];
 
     protected $hidden = [
@@ -51,4 +54,9 @@ class User extends Authenticatable implements MustVerifyEmail
         'is_deleted' => 'boolean',
         'is_owner' => 'boolean',
     ];
+
+    public function tenants()
+    {
+        return $this->belongsTo(tenants::class);
+    }
 }

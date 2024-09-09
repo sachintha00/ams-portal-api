@@ -17,6 +17,7 @@ class UserAuthRequest extends FormRequest
     {
 
         return [
+            'package' => ['required', 'string', 'max:255'],
             'user_name' => ['required', 'string', 'max:255'],
             'name' => ['nullable', 'string', 'max:255'],
             'contact_no' => ['required', 'string', 'max:255'],
@@ -35,7 +36,8 @@ class UserAuthRequest extends FormRequest
             'is_deleted' => ['nullable', 'boolean'],
             'created_user' => ['nullable', 'string', 'max:255'],
             'tenant_db_name' => ['nullable', 'string', 'max:255'],
-            'email' => 'required|email:rfc,dns|max:255|unique:users,email',
+            'email' => ['required', 'email:rfc,dns', 'max:255', 'unique:users,email'],
+            'app_user_email' => ['required', 'email:rfc,dns', 'max:255', 'unique:users,email'],
             'password' => ['required','string','min:8',
                 // 'regex:/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]+$/',
             ],
