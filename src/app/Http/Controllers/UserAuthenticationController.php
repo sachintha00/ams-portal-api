@@ -78,6 +78,7 @@ class UserAuthenticationController extends Controller
                 'status' => true,
                 'access_token' => $accessToken,
                 'refresh_token' => $refreshToken,
+                'user' => $user,
             ], Response::HTTP_OK);
 
             $response->cookie('accessToken', $accessToken, config('auth.token_lifetime'), '/', null, null, true); // HTTP-only

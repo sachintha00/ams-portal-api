@@ -44,11 +44,11 @@ class TenantAuthController extends Controller
         DB::beginTransaction();
         try {
             $validatedUser = $request->validated();
-            $validatedUser['password'] = bcrypt($validatedUser['password']);
+            // $validatedUser['password'] = bcrypt($validatedUser['password']);
  
             User::create($validatedUser);
 
-            DB::commit();
+            DB::commit(); 
 
             return response()->json([
                 'status' => true,
